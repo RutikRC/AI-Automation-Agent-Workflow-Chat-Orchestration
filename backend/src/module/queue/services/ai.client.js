@@ -88,12 +88,51 @@ class AIClient {
   }
 
   // ---------------------------------------------------------------------------
-  // Placeholder stubs for future pipeline stages (no implementation)
+  // Chunking
   // ---------------------------------------------------------------------------
 
-  async callChunking() {
-    throw new AppError("Chunking not implemented", 501);
+  /**
+   * Call the FastAPI chunking endpoint.
+   *
+   * @param {string} text  – The full extracted text to be split into chunks.
+   * @returns {Promise<{chunks: Array<{chunk_index, text, character_count, token_count}>}>}
+   */
+  async callChunking(text) {
+    const startTime = Date.now();
+
+    logger.info("Calling AI chunking service", {
+      inputChars: text?.length || 0,
+    });
+
+    const response = await this.client.post("/api/v1/chunking/chunk", {
+      text,
+    });
+
+    const duration = Date.now() - startTime;
+    const body = response.data;
+
+    if (!body || !body.success) {
+      throw new AppError(
+        body?.message || "AI chunking service returned unsuccessful response",
+        response.status
+      );
+    }
+
+    const { data } = body;
+    const chunks = data?.chunks || [];
+
+    logger.info("AI chunking completed", {
+      httpStatus: response.status,
+      executionTimeMs: duration,
+      chunkCount: chunks.length,
+    });
+
+    return { chunks };
   }
+
+  // ---------------------------------------------------------------------------
+  // Placeholder stubs for future pipeline stages (no implementation)
+  // ---------------------------------------------------------------------------
 
   async callEmbedding() {
     throw new AppError("Embedding not implemented", 501);
