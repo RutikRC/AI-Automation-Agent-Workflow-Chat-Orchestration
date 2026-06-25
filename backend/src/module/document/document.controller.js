@@ -1,5 +1,6 @@
 ﻿const path = require("path");
 const documentService = require("./document.service");
+const { enqueueDocumentReceived } = require("../queues/producers/document.producer");
 const AppError = require("../../utils/AppError");
 
 const uploadDocument = async (req, res, next) => {
@@ -12,6 +13,11 @@ const uploadDocument = async (req, res, next) => {
 
     const userId = req.user?.id || req.body.user_id || null;
     const document = await documentService.uploadDocument(file, req.body, userId);
+
+    await enqueueDocumentReceived({
+      documentId: document.id,
+      userId,
+    });
 
     return res.status(201).json({
       success: true,

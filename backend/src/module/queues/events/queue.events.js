@@ -1,7 +1,7 @@
 const { QueueEvents } = require("bullmq");
 const { QUEUE_NAME_DOCUMENT_PROCESSING } = require("../constants/queue.constants");
 const { redisConnection } = require("../config/bullmq.config");
-const logger = require("../../utils/logger");
+const logger = require("../../../utils/logger");
 
 const registerQueueEvents = () => {
   const queueEvents = new QueueEvents(QUEUE_NAME_DOCUMENT_PROCESSING, {

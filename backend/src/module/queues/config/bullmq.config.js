@@ -1,4 +1,4 @@
-const { Queue, QueueScheduler } = require("bullmq");
+const { Queue } = require("bullmq");
 const { QUEUE_NAME_DOCUMENT_PROCESSING } = require("../constants/queue.constants");
 require("dotenv").config();
 
@@ -25,12 +25,7 @@ const queue = new Queue(QUEUE_NAME_DOCUMENT_PROCESSING, {
   defaultJobOptions,
 });
 
-const scheduler = new QueueScheduler(QUEUE_NAME_DOCUMENT_PROCESSING, {
-  connection: redisConnection,
-});
-
 module.exports = {
   queue,
-  scheduler,
   redisConnection,
 };

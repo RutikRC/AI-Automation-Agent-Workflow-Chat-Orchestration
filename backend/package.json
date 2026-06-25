@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "concurrently \"nodemon src/server.js\" \"nodemon src/workers/startWorkers.js\"",
+    "dev:server": "nodemon src/server.js",
+    "dev:worker": "nodemon src/workers/startWorkers.js"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.0.1",
+    "concurrently": "^9.0.0",
     "nodemon": "^3.1.14"
   }
 }
