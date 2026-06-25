@@ -1,0 +1,11 @@
+
+# Playwright
+backend/node_modules/
+backend/test-results/
+backend/playwright-report/
+backend/blob-report/
+backend/playwright/.cache/
+backend/playwright/.auth/
+backend/playwright/.local-browsers/
+backend/.env
+backend/package-lock.json
