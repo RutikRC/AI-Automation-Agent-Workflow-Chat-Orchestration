@@ -1,26 +1,33 @@
 const pool = require("../../config/db");
 const AppError = require("../../utils/AppError");
 
-const CREATE_TABLE_IF_NOT_EXISTS = `
-  CREATE TABLE IF NOT EXISTS document_chunks (
-    id              UUID PRIMARY KEY,
-    document_id     UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    chunk_index     INTEGER NOT NULL,
-    content         TEXT NOT NULL,
-    character_count INTEGER NOT NULL DEFAULT 0,
-    token_count     INTEGER NOT NULL DEFAULT 0,
-    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-`;
+const MIGRATIONS = [
+  // 1. Create table if it does not exist at all
+  `CREATE TABLE IF NOT EXISTS document_chunks (
+    id               UUID PRIMARY KEY,
+    document_id      UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    chunk_index      INTEGER NOT NULL,
+    chunk_text       TEXT NOT NULL,
+    character_count  INTEGER NOT NULL DEFAULT 0,
+    token_count      INTEGER DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_document_chunk UNIQUE(document_id, chunk_index)
+  );`,
 
-const CREATE_INDEX_IF_NOT_EXISTS = `
-  CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id
-    ON document_chunks (document_id);
-`;
+  // 2. Add index on document_id for fast lookups
+  `CREATE INDEX IF NOT EXISTS idx_document_chunks_document
+    ON document_chunks (document_id);`,
+
+  // 3. Add composite index for ordering
+  `CREATE INDEX IF NOT EXISTS idx_document_chunks_order
+    ON document_chunks (document_id, chunk_index);`,
+];
 
 const ensureTable = async () => {
-  await pool.query(CREATE_TABLE_IF_NOT_EXISTS);
-  await pool.query(CREATE_INDEX_IF_NOT_EXISTS);
+  for (const sql of MIGRATIONS) {
+    await pool.query(sql);
+  }
 };
 
 /**
@@ -50,7 +57,7 @@ const saveChunks = async (chunks) => {
 
     // Insert all chunks
     const insertQuery = `
-      INSERT INTO document_chunks (id, document_id, chunk_index, content, character_count, token_count)
+      INSERT INTO document_chunks (id, document_id, chunk_index, chunk_text, character_count, token_count)
       VALUES ($1, $2, $3, $4, $5, $6)
     `;
 
