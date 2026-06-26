@@ -7,6 +7,7 @@ from app.api.v1.health import router as health_router
 from app.routers.extraction import router as extraction_router
 from app.routers.chunking import router as chunking_router
 from app.routers.embedding import router as embedding_router
+from app.routers.retrieval import router as retrieval_router
 from app.config.settings import get_settings
 from app.core.exceptions import (
     generic_exception_handler,
@@ -47,6 +48,7 @@ def create_application() -> FastAPI:
     app.include_router(extraction_router, prefix="/api/v1")
     app.include_router(chunking_router, prefix="/api/v1")
     app.include_router(embedding_router, prefix="/api/v1")
+    app.include_router(retrieval_router, prefix="/api/v1")
 
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, request_validation_exception_handler)

@@ -211,6 +211,83 @@ class AIClient {
     };
   }
 
+  /**
+   * Call the FastAPI retrieval embed-query endpoint.
+   *
+   * @param {object} params
+   * @param {string} params.query   – The search query text to embed.
+   * @param {string} [params.traceId] – optional correlation id
+   * @returns {Promise<{embedding: number[], dimension: number}>}
+   */
+  async generateQueryEmbedding({ query, traceId }) {
+    const startTime = Date.now();
+
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
+      throw new AppError("Cannot generate embedding for empty query", 422);
+    }
+
+    logger.info("Calling AI query embedding service", {
+      traceId,
+      queryChars: query.length,
+    });
+
+    const response = await this.client.post("/api/v1/retrieval/embed-query", {
+      query,
+    });
+
+    const duration = Date.now() - startTime;
+    const body = response.data;
+
+    if (!body || !body.success) {
+      throw new AppError(
+        body?.message || "AI query embedding service returned unsuccessful response",
+        response.status
+      );
+    }
+
+    const { data } = body;
+
+    if (!data || !data.embedding || !Array.isArray(data.embedding)) {
+      throw new AppError(
+        "AI query embedding service returned invalid embedding data",
+        422
+      );
+    }
+
+    if (data.embedding.length === 0) {
+      throw new AppError(
+        "AI query embedding service returned empty embedding vector",
+        422
+      );
+    }
+
+    if (data.dimension <= 0) {
+      throw new AppError(
+        `AI query embedding service returned invalid dimension: ${data.dimension}`,
+        422
+      );
+    }
+
+    if (data.embedding.length !== data.dimension) {
+      throw new AppError(
+        `AI query embedding service returned embedding length ${data.embedding.length} which does not match dimension ${data.dimension}`,
+        422
+      );
+    }
+
+    logger.info("AI query embedding completed", {
+      traceId,
+      httpStatus: response.status,
+      executionTimeMs: duration,
+      dimension: data.dimension,
+    });
+
+    return {
+      embedding: data.embedding,
+      dimension: data.dimension,
+    };
+  }
+
   async callRag() {
     throw new AppError("RAG not implemented", 501);
   }
