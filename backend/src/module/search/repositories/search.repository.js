@@ -42,7 +42,7 @@ const searchSimilarChunks = async (queryEmbedding, limit) => {
     JOIN document_chunks dc ON dc.id = de.chunk_id
     JOIN documents d ON d.id = de.document_id
     WHERE d.is_deleted = FALSE
-      AND d.processing_stage = 'READY'
+      AND d.status = 'READY'
     ORDER BY de.embedding <=> $1::vector
     LIMIT $2;
   `;
