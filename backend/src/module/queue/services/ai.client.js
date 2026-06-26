@@ -131,11 +131,84 @@ class AIClient {
   }
 
   // ---------------------------------------------------------------------------
-  // Placeholder stubs for future pipeline stages (no implementation)
+  // Embedding
   // ---------------------------------------------------------------------------
 
-  async callEmbedding() {
-    throw new AppError("Embedding not implemented", 501);
+  /**
+   * Call the FastAPI embedding generation endpoint.
+   *
+   * @param {string} text  – The chunk text to generate an embedding for.
+   * @returns {Promise<{success: boolean, model: string, dimension: number, embedding: number[]}>}
+   */
+  async callEmbedding(text) {
+    const startTime = Date.now();
+
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      throw new AppError("Cannot generate embedding for empty text", 422);
+    }
+
+    logger.info("Calling AI embedding service", {
+      inputChars: text.length,
+    });
+
+    const response = await this.client.post("/api/v1/embedding/generate", {
+      text,
+    });
+
+    const duration = Date.now() - startTime;
+    const body = response.data;
+
+    if (!body || !body.success) {
+      throw new AppError(
+        body?.message || "AI embedding service returned unsuccessful response",
+        response.status
+      );
+    }
+
+    const { data } = body;
+
+    // Validate response shape
+    if (!data || !data.embedding || !Array.isArray(data.embedding)) {
+      throw new AppError(
+        "AI embedding service returned invalid embedding data",
+        422
+      );
+    }
+
+    if (data.embedding.length === 0) {
+      throw new AppError(
+        "AI embedding service returned empty embedding vector",
+        422
+      );
+    }
+
+    if (data.dimension <= 0) {
+      throw new AppError(
+        `AI embedding service returned invalid dimension: ${data.dimension}`,
+        422
+      );
+    }
+
+    if (data.embedding.length !== data.dimension) {
+      throw new AppError(
+        `AI embedding service returned embedding length ${data.embedding.length} which does not match dimension ${data.dimension}`,
+        422
+      );
+    }
+
+    logger.info("AI embedding completed", {
+      httpStatus: response.status,
+      executionTimeMs: duration,
+      model: data.model,
+      dimension: data.dimension,
+    });
+
+    return {
+      success: data.success,
+      model: data.model,
+      dimension: data.dimension,
+      embedding: data.embedding,
+    };
   }
 
   async callRag() {

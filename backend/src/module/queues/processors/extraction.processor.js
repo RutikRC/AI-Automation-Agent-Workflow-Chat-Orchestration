@@ -37,9 +37,25 @@ const processTextExtraction = async (job) => {
   }
 
   // 3. Build absolute file path
-  const absolutePath = path.resolve(document.path);
+  let absolutePath = path.resolve(document.path);
 
-  // 4. Call FastAPI Extraction API via the reusable AI client
+  // 4. Convert Windows path to WSL-compatible path when running inside WSL.
+  //    The AI service runs inside WSL and cannot access Windows-style paths (E:\...).
+  //    WSL mounts Windows drives under /mnt/<drive-letter>/...
+  //    Example: E:\AI CRM\backend\uploads\file.pdf → /mnt/e/AI CRM/backend/uploads/file.pdf
+  if (/^[A-Za-z]:\\/.test(absolutePath)) {
+    const drive = absolutePath[0].toLowerCase();
+    const wslPath = absolutePath
+      .replace(/^[A-Za-z]:\\/, `/mnt/${drive}/`)
+      .replace(/\\/g, "/");
+    logger.info("Converted Windows path to WSL path", {
+      original: absolutePath,
+      wsl: wslPath,
+    });
+    absolutePath = wslPath;
+  }
+
+  // 5. Call FastAPI Extraction API via the reusable AI client
   const extractionResult = await aiClient.callExtraction({
     documentId,
     filePath: absolutePath,
