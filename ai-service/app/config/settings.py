@@ -16,6 +16,11 @@ class Settings(BaseSettings):
 
     OLLAMA_URL: str = Field(default="http://localhost:11434", validation_alias="OLLAMA_BASE_URL")
 
+    # LLM / RAG Generation
+    LLM_MODEL: str = Field(default="qwen2.5", validation_alias="LLM_MODEL")
+    LLM_TEMPERATURE: float = Field(default=0.1, validation_alias="LLM_TEMPERATURE")
+    LLM_MAX_TOKENS: int = Field(default=1024, validation_alias="LLM_MAX_TOKENS")
+
     POSTGRES_HOST: str = Field(default="localhost")
     POSTGRES_PORT: int = Field(default=5432)
     POSTGRES_DB: str = Field(default="postgres")

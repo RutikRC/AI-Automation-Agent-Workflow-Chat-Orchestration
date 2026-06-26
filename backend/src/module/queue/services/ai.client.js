@@ -288,8 +288,66 @@ class AIClient {
     };
   }
 
-  async callRag() {
-    throw new AppError("RAG not implemented", 501);
+  /**
+   * Call the FastAPI RAG generation endpoint.
+   *
+   * @param {object} params
+   * @param {string} params.question   – The user's question.
+   * @param {Array<{chunkText: string, documentId?: string, documentTitle?: string, chunkIndex?: number}>} params.context – Retrieved chunks.
+   * @param {string} [params.traceId]  – Optional correlation id.
+   * @returns {Promise<{answer: string, model: string, usage: {inputChunks: number}}>}
+   */
+  async callRagGenerate({ question, context, traceId }) {
+    const startTime = Date.now();
+
+    if (!question || typeof question !== "string" || question.trim().length === 0) {
+      throw new AppError("Question is required for RAG generation", 422);
+    }
+
+    logger.info("Calling AI RAG generation service", {
+      traceId,
+      questionChars: question.length,
+      contextChunks: context?.length || 0,
+    });
+
+    const response = await this.client.post("/api/v1/chat/generate", {
+      question,
+      context,
+    });
+
+    const duration = Date.now() - startTime;
+    const body = response.data;
+
+    if (!body || !body.success) {
+      throw new AppError(
+        body?.message || "AI RAG generation service returned unsuccessful response",
+        response.status
+      );
+    }
+
+    const { data } = body;
+
+    if (!data || !data.answer) {
+      throw new AppError(
+        "AI RAG generation service returned empty answer",
+        422
+      );
+    }
+
+    logger.info("AI RAG generation completed", {
+      traceId,
+      httpStatus: response.status,
+      executionTimeMs: duration,
+      answerChars: data.answer?.length || 0,
+      model: data.model,
+      inputChunks: data.usage?.inputChunks,
+    });
+
+    return {
+      answer: data.answer,
+      model: data.model,
+      usage: data.usage || { inputChunks: context?.length || 0 },
+    };
   }
 
   // ---------------------------------------------------------------------------
